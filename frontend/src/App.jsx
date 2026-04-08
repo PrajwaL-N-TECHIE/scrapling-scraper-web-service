@@ -86,7 +86,7 @@ function App() {
 
   const downloadCSV = () => {
     if (!results.length) return;
-    const headers = ['Company Name', 'Industry', 'About', 'Products', 'Website', 'LinkedIn', 'Twitter', 'Facebook', 'Instagram', 'YouTube'];
+    const headers = ['Company Name', 'Industry', 'About', 'Products', 'Website'];
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(",") + "\n"
       + results.map(r => [
@@ -94,12 +94,7 @@ function App() {
           `"${(r.industry || '').replaceAll('"', '""')}"`,
           `"${(r.about || '').replaceAll('"', '""')}"`,
           `"${(r.products || '').replaceAll('"', '""')}"`,
-          `"${(r.website || '').replaceAll('"', '""')}"`,
-          `"${(r.socials?.linkedin || '').replaceAll('"', '""')}"`,
-          `"${(r.socials?.twitter || '').replaceAll('"', '""')}"`,
-          `"${(r.socials?.facebook || '').replaceAll('"', '""')}"`,
-          `"${(r.socials?.instagram || '').replaceAll('"', '""')}"`,
-          `"${(r.socials?.youtube || '').replaceAll('"', '""')}"`
+          `"${(r.website || '').replaceAll('"', '""')}"`
         ].join(",")).join("\n");
     
     const encodedUri = encodeURI(csvContent);
