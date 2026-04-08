@@ -3,6 +3,7 @@ uvicorn
 scrapling
 curl-cffi
 playwright
+browserforge
 groq
 python-dotenv
 pandas
