@@ -2,6 +2,7 @@ fastapi
 uvicorn
 scrapling
 curl-cffi
+playwright
 groq
 python-dotenv
 pandas
