@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+scrapling
+groq
+python-dotenv
+pandas
+pydantic
+python-multipart
+aiohttp
+# removed playwright manual install since user asked not to use it
