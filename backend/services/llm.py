@@ -1,5 +1,5 @@
 import os
-from groq import AsyncGroq
+from groq import AsyncGroq, APIConnectionError, APIStatusError
 from dotenv import load_dotenv
 import json
 
@@ -8,16 +8,29 @@ load_dotenv()
 class LLMService:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
-        # Load priority list of models
-        fallback_str = os.getenv("FALLBACK_MODELS", "openai/gpt-oss-120b,llama-3.3-70b-versatile")
+        if not self.api_key:
+            print("CRITICAL: GROQ_API_KEY is not set in environment variables!")
+        
+        # Load priority list of models (Updated for 2026 stability)
+        default_models = "llama-3.3-70b-versatile,llama-3.1-70b-versatile,mixtral-8x7b-32768,llama-3.1-8b-instant"
+        fallback_str = os.getenv("FALLBACK_MODELS", default_models)
         self.priority_models = [m.strip() for m in fallback_str.split(",") if m.strip()]
         
-        self.client = AsyncGroq(api_key=self.api_key)
+        self.client = AsyncGroq(api_key=self.api_key, timeout=30.0)
         print(f"DEBUG: LLM Initialized with {len(self.priority_models)} potential models.")
 
     async def refine_data(self, raw_text: str, url: str, hints: dict = None):
         """Refines raw scraped text using a prioritized list of models with automatic fallback."""
         
+        if not self.api_key:
+            return {
+                "company_name": "Configuration Error",
+                "industry": "N/A",
+                "about": "GROQ_API_KEY is missing. Please add it to your environment variables on Render.",
+                "products": "N/A",
+                "website": url
+            }
+
         # Truncate text to avoid Rate Limit (TPM) issues on Groq
         truncated_text = raw_text[:15000]
         
@@ -61,16 +74,29 @@ class LLMService:
                 data = json.loads(content)
                 return data
 
+            except APIConnectionError as e:
+                err_msg = f"Connection Error for {model}: {str(e)}"
+                print(f"WARNING: {err_msg}")
+                last_error = err_msg
+                continue
+            except APIStatusError as e:
+                err_msg = f"Status Error {e.status_code} for {model}: {e.message}"
+                print(f"WARNING: {err_msg}")
+                last_error = err_msg
+                if e.status_code == 401:
+                    break # Don't try other models if the API Key is invalid
+                continue
             except Exception as e:
-                print(f"WARNING: Model {model} failed: {str(e)}")
-                last_error = str(e)
-                continue # Try next model
+                err_msg = f"Unexpected Error for {model}: {str(e)}"
+                print(f"WARNING: {err_msg}")
+                last_error = err_msg
+                continue
 
         # If we reach here, all models failed
         return {
             "company_name": "Error",
             "industry": "Error",
-            "about": f"All fallback models failed. Last error: {last_error}",
+            "about": f"Refinement failed. Details: {last_error}",
             "products": "Error",
             "website": url
         }
