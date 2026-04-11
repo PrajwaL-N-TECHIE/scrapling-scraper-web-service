@@ -1,4 +1,6 @@
 import os
+import httpx
+import certifi
 from groq import AsyncGroq, APIConnectionError, APIStatusError
 from dotenv import load_dotenv
 import json
@@ -16,8 +18,10 @@ class LLMService:
         fallback_str = os.getenv("FALLBACK_MODELS", default_models)
         self.priority_models = [m.strip() for m in fallback_str.split(",") if m.strip()]
         
-        self.client = AsyncGroq(api_key=self.api_key, timeout=30.0)
-        print(f"DEBUG: LLM Initialized with {len(self.priority_models)} potential models.")
+        # SSL Verification Fix: Use certifi's bundle to ensure secure connection to Groq API
+        http_client = httpx.AsyncClient(verify=certifi.where())
+        self.client = AsyncGroq(api_key=self.api_key, timeout=30.0, http_client=http_client)
+        print(f"DEBUG: LLM Initialized with {len(self.priority_models)} potential models (SSL Fix active).")
 
     async def refine_data(self, raw_text: str, url: str, hints: dict = None):
         """Refines raw scraped text using a prioritized list of models with automatic fallback."""

@@ -5,6 +5,7 @@ curl-cffi
 playwright
 browserforge
 groq
+certifi
 python-dotenv
 pandas
 pydantic
