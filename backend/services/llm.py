@@ -1,6 +1,7 @@
 import os
 import httpx
 import certifi
+import traceback
 from groq import AsyncGroq, APIConnectionError, APIStatusError
 from dotenv import load_dotenv
 import json
@@ -9,19 +10,25 @@ load_dotenv()
 
 class LLMService:
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY")
-        if not self.api_key:
-            print("CRITICAL: GROQ_API_KEY is not set in environment variables!")
+        raw_key = os.getenv("GROQ_API_KEY")
+        self.api_key = raw_key.strip() if raw_key else None
         
-        # Load priority list of models (Updated for 2026 stability)
-        default_models = "llama-3.3-70b-versatile,llama-3.1-70b-versatile,mixtral-8x7b-32768,llama-3.1-8b-instant"
+        if not self.api_key:
+            print("CRITICAL: GROQ_API_KEY is not set (or is empty) in environment variables!")
+        
+        # Load priority list of models (Optimized for stability)
+        default_models = "llama-3.3-70b-versatile,mixtral-8x7b-32768,llama-3.1-8b-instant"
         fallback_str = os.getenv("FALLBACK_MODELS", default_models)
         self.priority_models = [m.strip() for m in fallback_str.split(",") if m.strip()]
         
-        # SSL Verification Fix: Use certifi's bundle to ensure secure connection to Groq API
-        http_client = httpx.AsyncClient(verify=certifi.where())
-        self.client = AsyncGroq(api_key=self.api_key, timeout=30.0, http_client=http_client)
-        print(f"DEBUG: LLM Initialized with {len(self.priority_models)} potential models (SSL Fix active).")
+        # 'Deep Fix' Config: Use certifi bundle and FORCE HTTP/1.1 (many proxies hate HTTP/2)
+        http_client = httpx.AsyncClient(
+            verify=certifi.where(),
+            http2=False, # Disable HTTP/2 for maximum compatibility
+            timeout=30.0
+        )
+        self.client = AsyncGroq(api_key=self.api_key, http_client=http_client)
+        print(f"DEBUG: LLM Initialized. Key present: {bool(self.api_key)}. Models: {len(self.priority_models)}")
 
     async def refine_data(self, raw_text: str, url: str, hints: dict = None):
         """Refines raw scraped text using a prioritized list of models with automatic fallback."""
@@ -30,7 +37,7 @@ class LLMService:
             return {
                 "company_name": "Configuration Error",
                 "industry": "N/A",
-                "about": "GROQ_API_KEY is missing. Please add it to your environment variables on Render.",
+                "about": "GROQ_API_KEY is missing/empty. Please add it to your environment variables on Render (and make sure to SAVE the settings).",
                 "products": "N/A",
                 "website": url
             }
@@ -81,6 +88,7 @@ class LLMService:
             except APIConnectionError as e:
                 err_msg = f"Connection Error for {model}: {str(e)}"
                 print(f"WARNING: {err_msg}")
+                traceback.print_exc() # Print full traceback to Render logs
                 last_error = err_msg
                 continue
             except APIStatusError as e:
@@ -93,6 +101,7 @@ class LLMService:
             except Exception as e:
                 err_msg = f"Unexpected Error for {model}: {str(e)}"
                 print(f"WARNING: {err_msg}")
+                traceback.print_exc()
                 last_error = err_msg
                 continue
 
