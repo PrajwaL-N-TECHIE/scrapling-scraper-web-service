@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { 
-  Search, Upload, Download, Loader2, 
-  Info, Package, Trash2, Copy, Check, ExternalLink
+import {
+  Search, Upload, Download, Loader2,
+  Info, Package, Trash2, Copy, Check, ExternalLink, MapPin, Phone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,7 +45,7 @@ function App() {
       .map(u => u.trim())
       .filter(Boolean)
       .map(u => ensureProtocol(u));
-      
+
     if (!urls.length) return;
     setLoading(true);
     setError('');
@@ -86,17 +86,19 @@ function App() {
 
   const downloadCSV = () => {
     if (!results.length) return;
-    const headers = ['Company Name', 'Industry', 'About', 'Products', 'Website'];
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const headers = ['Company Name', 'Industry', 'About', 'Products', 'Website', 'Address', 'Phone Number'];
+    const csvContent = "data:text/csv;charset=utf-8,"
       + headers.join(",") + "\n"
       + results.map(r => [
-          `"${(r.company_name || '').replaceAll('"', '""')}"`,
-          `"${(r.industry || '').replaceAll('"', '""')}"`,
-          `"${(r.about || '').replaceAll('"', '""')}"`,
-          `"${(r.products || '').replaceAll('"', '""')}"`,
-          `"${(r.website || '').replaceAll('"', '""')}"`
-        ].join(",")).join("\n");
-    
+        `"${(r.company_name || '').replaceAll('"', '""')}"`,
+        `"${(r.industry || '').replaceAll('"', '""')}"`,
+        `"${(r.about || '').replaceAll('"', '""')}"`,
+        `"${(r.products || '').replaceAll('"', '""')}"`,
+        `"${(r.website || '').replaceAll('"', '""')}"`,
+        `"${(r.address || '').replaceAll('"', '""')}"`,
+        `"${(r.phone_number || '').replaceAll('"', '""')}"`
+      ].join(",")).join("\n");
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -109,15 +111,15 @@ function App() {
   return (
     <div className="container" style={{ paddingBottom: '10rem' }}>
       <header style={{ textAlign: 'center', marginBottom: '5rem' }}>
-        <motion.h1 
-          className="primary-gradient" 
+        <motion.h1
+          className="primary-gradient"
           style={{ fontSize: '4.5rem', marginBottom: '1.2rem', fontWeight: '900', letterSpacing: '-0.02em' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
         >
           AI Data Enlarger
         </motion.h1>
-        <motion.p 
+        <motion.p
           style={{ color: '#64748b', fontSize: '1.4rem', maxWidth: '700px', margin: '0 auto', fontWeight: '500' }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -128,7 +130,7 @@ function App() {
       </header>
 
       <div className="grid-layout">
-        <motion.div 
+        <motion.div
           className="glass-card"
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -137,19 +139,19 @@ function App() {
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '2rem', fontSize: '1.8rem', fontWeight: '800' }}>
             <div style={{ background: 'rgba(129, 140, 248, 0.15)', padding: '0.6rem', borderRadius: '12px' }}>
               <Search size={28} color="#818cf8" />
-            </div> 
+            </div>
             Single URL Analysis
           </h2>
           <div style={{ display: 'flex', gap: '0.8rem' }}>
-            <input 
-              type="text" 
-              placeholder="https://example.com" 
+            <input
+              type="text"
+              placeholder="https://example.com"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSingleScrape()}
             />
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={handleSingleScrape}
               disabled={loading || !url}
             >
@@ -159,7 +161,7 @@ function App() {
           {error && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ color: '#fb7185', marginTop: '1.2rem', fontSize: '1rem', fontWeight: '600' }}>{error}</motion.p>}
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="glass-card"
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -171,7 +173,7 @@ function App() {
             </div>
             Batch Intelligence
           </h2>
-          <textarea 
+          <textarea
             rows="2"
             placeholder="Paste URLs (one per line)..."
             value={batchUrls}
@@ -184,8 +186,8 @@ function App() {
               <Upload size={20} />
               Upload Source
             </label>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={handleBatchScrape}
               disabled={loading || !batchUrls}
             >
@@ -197,7 +199,7 @@ function App() {
 
       <AnimatePresence>
         {results.length > 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             style={{ marginTop: '6rem' }}
@@ -208,9 +210,9 @@ function App() {
                 <p style={{ color: '#64748b', fontSize: '1.1rem' }}>Identified {results.length} companies from the sources provided.</p>
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  className="btn-primary" 
-                  onClick={() => setResults([])} 
+                <button
+                  className="btn-primary"
+                  onClick={() => setResults([])}
                   style={{ background: 'rgba(251, 113, 133, 0.1)', color: '#fb7185', border: '1px solid rgba(251, 113, 133, 0.2)', boxShadow: 'none' }}
                 >
                   <Trash2 size={20} />
@@ -224,7 +226,7 @@ function App() {
 
             <div className="results-grid">
               {results.map((res, i) => (
-                <motion.div 
+                <motion.div
                   key={`${res.website}-${i}`}
                   className="info-card glass-card"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -248,6 +250,20 @@ function App() {
                     </p>
                   </div>
 
+                  {(res.address && res.address !== 'N/A') && (
+                    <div className="card-section">
+                      <span className="card-label"><MapPin size={16} color="#fb7185" /> Office Address</span>
+                      <p className="card-content" style={{ color: '#64748b' }}>{res.address}</p>
+                    </div>
+                  )}
+
+                  {(res.phone_number && res.phone_number !== 'N/A') && (
+                    <div className="card-section">
+                      <span className="card-label"><Phone size={16} color="#34d399" /> Contact Number</span>
+                      <p className="card-content" style={{ color: '#64748b' }}>{res.phone_number}</p>
+                    </div>
+                  )}
+
                   {res.socials && Object.values(res.socials).some(v => v !== 'N/A') && (
                     <div className="card-section">
                       <span className="card-label">Social Presence</span>
@@ -262,8 +278,8 @@ function App() {
                   )}
 
                   <div className="card-footer">
-                    <button 
-                      className="copy-btn" 
+                    <button
+                      className="copy-btn"
                       onClick={() => copyToClipboard(`${res.company_name}\n${res.about}`, i)}
                     >
                       {copiedId === i ? <Check size={16} color="#4ade80" /> : <Copy size={16} />}
@@ -289,8 +305,8 @@ function App() {
 
       {(loading && results.length === 0) && (
         <div style={{ textAlign: 'center', marginTop: '8rem' }}>
-           <Loader2 size={64} className="animate-spin" style={{ color: '#818cf8', opacity: 0.8 }} />
-           <p style={{ marginTop: '2rem', color: '#64748b', fontSize: '1.2rem', fontWeight: '500' }}>Assembling intelligence profiles...</p>
+          <Loader2 size={64} className="animate-spin" style={{ color: '#818cf8', opacity: 0.8 }} />
+          <p style={{ marginTop: '2rem', color: '#64748b', fontSize: '1.2rem', fontWeight: '500' }}>Assembling intelligence profiles...</p>
         </div>
       )}
     </div>

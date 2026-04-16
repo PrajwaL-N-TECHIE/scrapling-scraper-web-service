@@ -53,6 +53,8 @@ class LLMService:
         - about (detailed summary)
         - products (comma-separated list)
         - website (canonical URL)
+        - address (physical location if found)
+        - phone_number (contact number if found)
         - socials (JSON object with keys: linkedin, twitter, facebook, instagram, youtube. Use URLs if found, else "N/A")
 
         PRIORITY GUIDELINES:
